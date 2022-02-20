@@ -1,9 +1,9 @@
-from aml_perceptron import LinearClassifier
+from aml_perceptron import LinearClassifier, sparse_dense_dot, add_sparse_to_dense
 import random
 import numpy as np
 
 
-class PegasosSVC(LinearClassifier):
+class PegasosSVCSparse(LinearClassifier):
     """
     Pegasos algorithm using SVC and hinge loss
     """
@@ -32,20 +32,19 @@ class PegasosSVC(LinearClassifier):
         # Convert all outputs to +1 (for the positive class) or -1 (negative).
         Ye = self.encode_outputs(Y)
 
-        # If necessary, convert the sparse matrix returned by a vectorizer
-        # into a normal NumPy matrix.
-        if not isinstance(X, np.ndarray):
-            X = X.toarray()
-
         # Initialize the weight vector to all zeros.
         self.w = np.zeros(X.shape[1])
 
         self.regularizationParameter = 1 / len(self.w)
 
-        # Features and output
+        # Iteration through sparse matrices can be a bit slow, so we first
+        # prepare this list to speed up iteration.
         data = tuple(zip(X, Ye))
 
         allLoss = []
+
+        # Scaling factor for vector scaling speedup
+        scalingFactor = 1.0
 
         # Avoid calling random.choice() every iteration
         randomIndex = tuple([random.randrange(len(data)) for _ in range(self.n_iter)])
@@ -58,14 +57,16 @@ class PegasosSVC(LinearClassifier):
             learningRate = 1 / (self.regularizationParameter * t)
 
             # Compute the output score for this instance.
-            score = x.dot(self.w)
+            score = scalingFactor * sparse_dense_dot(x, self.w)
 
-            # If there was an error, update the weights.
-            self.w = (1 - learningRate * self.regularizationParameter) * self.w
+            scalingFactor = (1 - learningRate * self.regularizationParameter) * scalingFactor
+
+            if scalingFactor == 0.:
+                scalingFactor = 1e-9
 
             # Add gradient if `y.(w.x) < 1`
             if y * score < 1:
-                self.w += (learningRate * y) * x
+                add_sparse_to_dense(x, self.w, learningRate * y / scalingFactor)
                 allLoss.append(1 - y * score)
             else:
                 allLoss.append(0)
@@ -79,8 +80,10 @@ class PegasosSVC(LinearClassifier):
                     avg = sum(allLoss) / len(allLoss)
                     print("Iteration {}*10^4, average loss: {:.4f}".format(round(t / 1e4), avg))
 
+        self.w *= scalingFactor
 
-class PegasosLR(LinearClassifier):
+
+class PegasosLRSparse(LinearClassifier):
     """
     Pegasos algorithm using LR and logistic loss
     """
@@ -108,11 +111,6 @@ class PegasosLR(LinearClassifier):
         # Convert all outputs to +1 (for the positive class) or -1 (negative).
         Ye = self.encode_outputs(Y)
 
-        # If necessary, convert the sparse matrix returned by a vectorizer
-        # into a normal NumPy matrix.
-        if not isinstance(X, np.ndarray):
-            X = X.toarray()
-
         # Initialize the weight vector to all zeros.
         self.w = np.zeros(X.shape[1])
         # `X.shape[1]` is the number of features
@@ -123,6 +121,8 @@ class PegasosLR(LinearClassifier):
 
         allLoss = []
 
+        scalingFactor = 1.0
+
         # Avoid calling random.choice() every iteration
         randomIndex = tuple([random.randrange(len(data)) for _ in range(self.n_iter)])
 
@@ -130,14 +130,23 @@ class PegasosLR(LinearClassifier):
         for t in range(1, self.n_iter + 1):
             x, y = data[randomIndex[t - 1]]
 
+
             # Eta, learning rate
             learningRate = 1 / (t * self.regularizationParameter)
 
-            allLoss.append(np.log(1 + np.exp(-y * x.dot(self.w))))
+            d = scalingFactor * sparse_dense_dot(x, self.w)
+
+            scalingFactor = (1 - learningRate * self.regularizationParameter) * scalingFactor
+
+            if scalingFactor == 0.:
+                scalingFactor = 1e-9
+
+            allLoss.append(np.log(1 + np.exp(-y * d)))
 
             # Compute the output score for this instance.
-            gradient = (y / (1 + np.exp(y * x.dot(self.w)))) * x
-            self.w = (1 - learningRate * self.regularizationParameter) * self.w + learningRate * gradient
+            gradient = (y / (1 + np.exp(y * d))) * x
+
+            add_sparse_to_dense(gradient, self.w, learningRate / scalingFactor)
 
             if t != 0:
                 if t < 1e4 and t % 1e3 == 0:
@@ -147,3 +156,5 @@ class PegasosLR(LinearClassifier):
                 if t < 1e5 and t % 1e4 == 0:
                     avg = sum(allLoss) / len(allLoss)
                     print("Iteration {}*10^4, average loss: {:.4f}".format(round(t / 1e4), avg))
+
+        self.w *= scalingFactor
