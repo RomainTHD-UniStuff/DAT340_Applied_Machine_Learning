@@ -3,12 +3,12 @@ import random
 import numpy as np
 
 
-class PegasosHingeLoss(LinearClassifier):
+class PegasosSVC(LinearClassifier):
     """
-    Pegasos algorithm using hinge loss
+    Pegasos algorithm using SVC and hinge loss
     """
 
-    def __init__(self, n_iter=1e4):
+    def __init__(self, n_iter=1e5):
         """
         The constructor can optionally take a parameter n_iter specifying how
         many times we want to iterate through the training set.
@@ -48,6 +48,8 @@ class PegasosHingeLoss(LinearClassifier):
         # Features and output
         data = list(zip(X, Ye))
 
+        allLoss = []
+
         # Pegasos algorithm using hinge loss
         for t in range(1, self.n_iter + 1):
             # Training pair
@@ -65,14 +67,26 @@ class PegasosHingeLoss(LinearClassifier):
             # Add gradient if `y.(w.x) < 1`
             if y * score < 1:
                 self.w += (learningRate * y) * x
+                allLoss.append(1 - y * score)
+            else:
+                allLoss.append(0)
+
+            if t != 0:
+                if t < 1e4 and t % 1e3 == 0:
+                    avg = sum(allLoss) / len(allLoss)
+                    print("Iteration {}*10^3, average loss: {:.4f}".format(round(t / 1e3), avg))
+
+                if t < 1e5 and t % 1e4 == 0:
+                    avg = sum(allLoss) / len(allLoss)
+                    print("Iteration {}*10^4, average loss: {:.4f}".format(round(t / 1e4), avg))
 
 
-class PegasosLogisticLoss(LinearClassifier):
+class PegasosLR(LinearClassifier):
     """
-    Pegasos algorithm using logistic loss
+    Pegasos algorithm using LR and logistic loss
     """
 
-    def __init__(self, n_iter=1e4):
+    def __init__(self, n_iter=1e5):
         """
         The constructor can optionally take a parameter n_iter specifying many pair to train on.
         """
@@ -108,6 +122,8 @@ class PegasosLogisticLoss(LinearClassifier):
 
         data = list(zip(X, Ye))
 
+        allLoss = []
+
         # Pegasos algorithm using logistic loss
         for t in range(1, self.n_iter + 1):
             x, y = random.choice(data)
@@ -115,6 +131,17 @@ class PegasosLogisticLoss(LinearClassifier):
             # Eta, learning rate
             learningRate = 1 / (t * self.regularizationParameter)
 
+            allLoss.append(np.log(1 + np.exp(-y * x.dot(self.w))))
+
             # Compute the output score for this instance.
             gradient = (y / (1 + np.exp(y * x.dot(self.w)))) * x
             self.w = (1 - learningRate * self.regularizationParameter) * self.w + learningRate * gradient
+
+            if t != 0:
+                if t < 1e4 and t % 1e3 == 0:
+                    avg = sum(allLoss) / len(allLoss)
+                    print("Iteration {}*10^3, average loss: {:.4f}".format(round(t / 1e3), avg))
+
+                if t < 1e5 and t % 1e4 == 0:
+                    avg = sum(allLoss) / len(allLoss)
+                    print("Iteration {}*10^4, average loss: {:.4f}".format(round(t / 1e4), avg))

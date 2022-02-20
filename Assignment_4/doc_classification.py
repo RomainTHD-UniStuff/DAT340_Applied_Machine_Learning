@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 from aml_perceptron import Perceptron, SparsePerceptron
-from pegasos import PegasosHingeLoss, PegasosLogisticLoss
+from pegasos import PegasosSVC, PegasosLR
 
 
 # This function reads the corpus, returns a list of documents, and a list
@@ -41,7 +41,7 @@ if __name__ == '__main__':
         # NB that this is our Perceptron, not sklearn.linear_model.Perceptron
         # Perceptron()
         # PegasosHingeLoss()
-        PegasosLogisticLoss()
+        PegasosLR()
     )
 
     # Train the classifier.
