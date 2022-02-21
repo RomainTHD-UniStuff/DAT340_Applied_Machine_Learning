@@ -130,7 +130,6 @@ class PegasosLRSparse(LinearClassifier):
         for t in range(1, self.n_iter + 1):
             x, y = data[randomIndex[t - 1]]
 
-
             # Eta, learning rate
             learningRate = 1 / (t * self.regularizationParameter)
 
