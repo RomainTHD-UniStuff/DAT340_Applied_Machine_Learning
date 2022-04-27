@@ -16,8 +16,8 @@
 
 \title{Stance detection}
 
-\author{Romain THEODET \\
-  {\tt theodet@student.chalmers.se}
+\author{*Redacted due to web crawlers* \\
+  {\tt *Redacted due to web crawlers*@student.chalmers.se}
 }
 
 \date{}
@@ -53,7 +53,7 @@ This is especially true for the anti-vaccination community, which often writes "
 
 Moreover, the data in itself isn't really reliable, albeit it has been reviewed by a pair.
 The other students who classified the comments probably share common beliefs with the original student,
-since we're all Master students in Computer Science living in a first-world  country. 
+since we're all Master students in Computer Science living in a first-world  country.
 A third review could have helped to filter out even more ambiguous sentences.
 
 To evaluate the quality of our model, we used separate training and test set.
@@ -91,7 +91,7 @@ The test set got the same pre-processing as the training set.
 \section{Model}
 
 Two models were tested, raising both slightly different results.
-The models were chosen simply by testing all available models in \texttt{sklearn.feature\_extraction.text} . 
+The models were chosen simply by testing all available models in \texttt{sklearn.feature\_extraction.text} .
 
 \subsection{HashingVectorizer}
 
@@ -130,7 +130,7 @@ around $2^{18}$ features.
 
 This algorithm convert the data to a matrix of TF-IDF (term frequency-inverse document frequency) features.
 It is a numerical statistic that reflect how important a word is to the document.
-To do so, this algorithm multiply two statistics, the term frequency and the inverse document frequency. 
+To do so, this algorithm multiply two statistics, the term frequency and the inverse document frequency.
 The first one is the relative frequency of a word within the document,
 while the second one is a measure of how much information the word provides, i.e. if it is common or rare across all documents.
 Indeed, it seems obvious that the number of "the" in a message contains way less
